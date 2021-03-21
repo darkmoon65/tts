@@ -20,7 +20,7 @@ function consultaIbm($qr){
 }
 
 // LLamada a la api de consultas
-$wDir="/gravaciones/citas/tts/";
+$wDir="/var/lib/asterisk/agi-bin/sounds/en/gravaciones/citas/tts/";
 if (isset($argv[1])){
     $head = array();
     $head[] = 'Content-type: application/json';
@@ -54,7 +54,7 @@ if (isset($argv[1])){
         echo("listo");
         $wr = fopen($wDir.'audio.ulaw',"w");
         fwrite($wr, $result);
-        play_date();
+        play_date($fecha,$hora,$agi);
         $agi->answer();
         $agi->stream_file($wDir."audio");
     }else{
@@ -80,7 +80,7 @@ if (isset($argv[1])){
 }
 
 
-function play_date($fechaP,$horaP){
+function play_date($fechaP,$horaP,$agi){
     $tFecha = explode(" ", $fechaP);
     $tHora = explode(" ", $horaP);
 
@@ -88,7 +88,7 @@ function play_date($fechaP,$horaP){
     $dia = intval("${td[0]}");
     $mes = intval("${td[1]}") - 1;
 
-    $th = explode(":", $tHora[0);
+    $th = explode(":", $tHora[0]);
     $hora = $th[0] ? intval("${th[0]}") : 0;
     $minuto = $th[1] ? intval("${th[1]}") : 0;
 
@@ -100,23 +100,22 @@ function play_date($fechaP,$horaP){
     PlayTimePart($agi,$hora);
     $agi->stream_file("letters/e");
     PlayTimePart($agi,$minuto);
-
-    function PlayTimePart($agi,$t1){
-        if($t1 > 20){
-            if(substr($t1, -1) == 0){
-                $agi->stream_file("digits/".$t1);
-            }
-            else {
-                $agi->stream_file("digits/".substr($t1,0,1)."0");
-                $agi->stream_file("letters/e");
-                $agi->stream_file("digits/".substr($t1, -1));
-            }
-        }
-        else {
+}
+function PlayTimePart($agi,$t1){
+    if($t1 > 20){
+        if(substr($t1, -1) == 0){
             $agi->stream_file("digits/".$t1);
         }
+        else {
+            $agi->stream_file("digits/".substr($t1,0,1)."0");
+            $agi->stream_file("letters/e");
+            $agi->stream_file("digits/".substr($t1, -1));
+        }
     }
-
+    else {
+        $agi->stream_file("digits/".$t1);
+    }
 }
+
 
 ?>
