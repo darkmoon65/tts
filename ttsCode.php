@@ -20,7 +20,7 @@ function consultaIbm($qr){
 }
 
 // LLamada a la api de consultas
-$wDir="/var/lib/asterisk/agi-bin/sounds/en/gravaciones/citas/tts/";
+$wDir="/var/lib/asterisk/sounds/en/gravaciones/citas/tts/";
 if (isset($argv[1])){
     $head = array();
     $head[] = 'Content-type: application/json';
