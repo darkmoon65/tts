@@ -3,8 +3,10 @@
 
 require_once ('phpagi.php');
 $agi = new AGI();
-
-
+$agi->answer();
+$result = $agi->get_data('beep',10000,9);
+$rut = $result['result'];
+echo $rut;
 function consultaIbm($qr){
         $apiKey = 'R_3F1fdc_XkJ9WX3VZ6S8y-L_q_wN_QOz1BGmGTJdVaH';
         $apiUrl = 'https://api.us-south.text-to-speech.watson.cloud.ibm.com/instances/7574d201-24f6-40ce-89c3-f4c816ba7edd/v1/synthesize?accept=audio%2Fmulaw%3Brate%3D8000&text='.$qr.'&voice=es-ES_EnriqueV3Voice';
@@ -20,14 +22,14 @@ function consultaIbm($qr){
 }
 
 // LLamada a la api de consultas
-$wDir="/var/lib/asterisk/agi-bin/sounds/en/gravaciones/citas/tts/";
-if (isset($argv[1])){
+$wDir="/var/lib/asterisk/sounds/en/gravaciones/citas/tts/";
+if (isset($rut)){
     $head = array();
     $head[] = 'Content-type: application/json';
     //$head[] = 'Authorization: ApiUser Aitue-web1q2w3e4r.,';
     $username = 'ApiUser';
     $password = 'Aitue-web1q2w3e4r.,';
-    $query = $argv[1];
+    $query = $rut;
     $urlConsulta = 'https://projects.sofgem.cl/consulta/atencion/?rut='.$query;
     
     $ch = curl_init();
@@ -81,24 +83,21 @@ if (isset($argv[1])){
 
 
 function play_date($fechaP,$horaP,$agi){
-    $tFecha = explode(" ", $fechaP);
-    $tHora = explode(" ", $horaP);
+    $td = explode("-", $fechaP);
+    $dia = intval("${td[2]}");
+    $mes = intval("${td[1]}");
 
-    $td = explode("/", $tFecha[0]);
-    $dia = intval("${td[0]}");
-    $mes = intval("${td[1]}") - 1;
-
-    $th = explode(":", $tHora[0]);
+    $th = explode(":", $horaP);
     $hora = $th[0] ? intval("${th[0]}") : 0;
     $minuto = $th[1] ? intval("${th[1]}") : 0;
 
     $agi->answer();
     PlayTimePart($agi,$dia);
-    $agi->stream_file("digits/pt-de");
+    $agi->stream_file("digits/es-de");
     $agi->stream_file("digits/mon-".$mes);
-    $agi->stream_file("digits/pt-as");
+    $agi->stream_file("digits/at");
     PlayTimePart($agi,$hora);
-    $agi->stream_file("letters/e");
+    $agi->stream_file("letters/i");
     PlayTimePart($agi,$minuto);
 }
 function PlayTimePart($agi,$t1){
@@ -108,7 +107,7 @@ function PlayTimePart($agi,$t1){
         }
         else {
             $agi->stream_file("digits/".substr($t1,0,1)."0");
-            $agi->stream_file("letters/e");
+            $agi->stream_file("letters/i");
             $agi->stream_file("digits/".substr($t1, -1));
         }
     }
