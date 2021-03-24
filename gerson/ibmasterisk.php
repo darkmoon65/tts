@@ -27,6 +27,7 @@
 
 	// Recepci�n de RUT del cliente
 	$agi 			= new AGI();
+    $agi->answer();
 	$cpf 			= $agi->get_data("/opt/xcontact/audios/Bienvenida/Audio4num2mp3_xc",20000,9);
 	// $cpf 			= $agi->get_data("/var/lib/asterisk/sounds/en/gravaciones/audios/Audio7rutconhoramp3_xc",20000,9);
 	
@@ -116,7 +117,7 @@
                             $agi->hangup();
                         }
                     }
-                $veces = 2;
+                $repetir = false;
                 
             }else{
                 $agi->stream_file($audioSeis);
@@ -128,13 +129,13 @@
                 }
                 else{
                     $num = $captureKey['result'];
-                    if($num == '1' && intentos < 1){
-                        $repetir = true;
-                        $intentos += 1;
-                    }else if ($num == '1' && intentos > 0){
-                        $repetir = false;
-                    }
-                    else if ($num == '2'){
+                    if($num == '1' && $intentos < 2){
+                        if($intentos == 1){
+                            $repetir = false;
+                        }
+                        $intentos += 1; 
+                                             
+                    }else if ($num == '2'){
                         $agi->stream_file($audioTres);
                         $agi->exec("Goto","8001,1");
                     }
