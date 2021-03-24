@@ -39,72 +39,109 @@
 	}
 	else
 	{
-		$agi->verbose("Buscando CPF: ".$cpf['result']);
-		$rutCliente		= $cpf['result'];
-		$query		= $rutCliente;
-		
-        $head = array();
-        $head[] = 'Content-type: application/json';
-        $username = 'ApiUser';
-        $password = 'Aitue-web1q2w3e4r.,';
-        $urlConsulta = 'https://projects.sofgem.cl/consulta/atencion/?rut='.$query;
-        
-        $ch = curl_init();
-        curl_setopt ( $ch , CURLOPT_URL, $urlConsulta);
-        curl_setopt ( $ch , CURLOPT_HTTPGET, 1 );
-        curl_setopt( $ch , CURLOPT_USERPWD, $username . ":" . $password);
-        curl_setopt ( $ch , CURLOPT_HTTPHEADER, $head);
-        curl_setopt( $ch , CURLOPT_RETURNTRANSFER, 1);
-        $data = curl_exec($ch );
-        curl_close($ch );
-        $newData = json_decode($data, true);
-
-
-
-
-        if( $newData['estado'] == true){
-			
-			
-
-            $fecha = $newData['datos']['fecha'];
-            $hora = $newData['datos']['Hora'];
-            $medico = $newData['datos']['medico'];
-            $especialidad = $newData['datos']['especialidad'];
-            $paciente = $newData['datos']['paciente'];
-            $correo_paciente = $newData['datos']['correo_paciente'];
-            $mesage = 'medico, '.$medico. ', especialidad, '.$especialidad.', paciente, '.$paciente.', correo del paciente, '.$correo_paciente;
+        $repetir = true;
+        while($repetir == true){
+            $agi->verbose("Buscando CPF: ".$cpf['result']);
+            $rutCliente		= $cpf['result'];
+            $query		= $rutCliente;
             
-
-            $meses = array("Enero","Febrero","Marzo","Abril","Mayo","Junio","Julio","Agosto","Septiembre","Octubre","Noviembre","Diciembre");
-
-            $diaActualizacion = date("j", strtotime($fecha));
-            $mesActualizacion = $meses[date('n', strtotime($fecha))-1];
-            $anioActualizacion = date("Y", strtotime($fecha));
-            $horaActualizacion = date("H", strtotime($hora));
-            $minutoActualizacion = date("i", strtotime($hora));
-
-            $frase = 'El '.$diaActualizacion.' de '.$mesActualizacion.', a las '.$horaActualizacion.' con '.$minutoActualizacion.' minutos, ';
-
-    
-            $encodeMesage = urlencode($frase." con el especialista, ".$mesage);
-
-
-            $result = consultaIbm($encodeMesage);
-            $wr = fopen($direccionAudiosTts.'audio.ulaw',"w");
-            fwrite($wr, $result);
+            $head = array();
+            $head[] = 'Content-type: application/json';
+            $username = 'ApiUser';
+            $password = 'Aitue-web1q2w3e4r.,';
+            $urlConsulta = 'https://projects.sofgem.cl/consulta/atencion/?rut='.$query;
+            
+            $ch = curl_init();
+            curl_setopt ( $ch , CURLOPT_URL, $urlConsulta);
+            curl_setopt ( $ch , CURLOPT_HTTPGET, 1 );
+            curl_setopt( $ch , CURLOPT_USERPWD, $username . ":" . $password);
+            curl_setopt ( $ch , CURLOPT_HTTPHEADER, $head);
+            curl_setopt( $ch , CURLOPT_RETURNTRANSFER, 1);
+            $data = curl_exec($ch );
+            curl_close($ch );
+            $newData = json_decode($data, true);
 
 
-            $agi->stream_file($audioSiete);
-           
-            $agi->answer();
 
-            $agi->stream_file($direccionAudiosTts."audio");
-			$agi->stream_file($audioSieteDos);
-			$agi->stream_file($audioSieteTres);
-        }else{
-			$agi->stream_file($audioSeis);
-    
+            if( $newData['estado'] == true){
+
+                $fecha = $newData['datos']['fecha'];
+                $hora = $newData['datos']['Hora'];
+                $medico = $newData['datos']['medico'];
+                $especialidad = $newData['datos']['especialidad'];
+                $paciente = $newData['datos']['paciente'];
+                $correo_paciente = $newData['datos']['correo_paciente'];
+                $mesage = 'medico, '.$medico. ', especialidad, '.$especialidad.', paciente, '.$paciente.', correo del paciente, '.$correo_paciente;
+                
+
+                $meses = array("Enero","Febrero","Marzo","Abril","Mayo","Junio","Julio","Agosto","Septiembre","Octubre","Noviembre","Diciembre");
+
+                $diaActualizacion = date("j", strtotime($fecha));
+                $mesActualizacion = $meses[date('n', strtotime($fecha))-1];
+                $anioActualizacion = date("Y", strtotime($fecha));
+                $horaActualizacion = date("H", strtotime($hora));
+                $minutoActualizacion = date("i", strtotime($hora));
+
+                $frase = 'El '.$diaActualizacion.' de '.$mesActualizacion.', a las '.$horaActualizacion.' con '.$minutoActualizacion.' minutos, ';
+
+        
+                $encodeMesage = urlencode($frase." con el especialista, ".$mesage);
+
+
+                $result = consultaIbm($encodeMesage);
+                $wr = fopen($direccionAudiosTts.'audio.ulaw',"w");
+                fwrite($wr, $result);
+
+
+                $agi->stream_file($audioSiete);
+            
+                $agi->answer();
+
+                $agi->stream_file($direccionAudiosTts."audio");
+                $agi->stream_file($audioSieteDos);
+                $agi->stream_file($audioSieteTres);
+                $captureKey = $agi->get_data('beep',10000,1);
+                    if(isset($captureKey['data']) && $captureKey['data'] === 'timeout')
+                    {	
+                        $agi->verbose("Fim da URA interativa, ERRO: o usuário demorou muito para informar o CPF ou não digitou o dígito");
+                        $agi->exec("Goto","8001,1");
+                    }
+                    else{
+                        $num = $captureKey['result'];
+                        if($num == '1'){
+                            $agi->stream_file($audioSieteDosUno);
+                            // llamada a la api "guardar asistencia"  ... 
+                        }else{
+                            $agi->verbose("Fim do IVR interativo, ERROR: o usuário inseriu um dígito incorreto");
+                            $agi->hangup();
+                        }
+                    }
+                $veces = 2;
+                
+            }else{
+                $agi->stream_file($audioSeis);
+                $captureKey = $agi->get_data('beep',10000,1);
+                if(isset($captureKey['data']) && $captureKey['data'] === 'timeout')
+                {	
+                    $agi->verbose("Fim da URA interativa, ERRO: o usuário demorou muito para informar o CPF ou não digitou o dígito");
+                    $agi->hangup();
+                }
+                else{
+                    $num = $captureKey['result'];
+                    if($num == '1' && intentos < 1){
+                        $repetir = true;
+                        $intentos += 1;
+                    }else if ($num == '1' && intentos > 0){
+                        $repetir = false;
+                    }
+                    else if ($num == '2'){
+                        $agi->stream_file($audioTres);
+                        $agi->exec("Goto","8001,1");
+                    }
+                }
+            }
         }
+		
 	}
 	
 
